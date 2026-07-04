@@ -21,6 +21,15 @@ function addChildToNode(node, parentId, newChild) {
   }
 }
 
+function findNodeById(node, id) {
+  if (node.id === id) return node
+  for (const child of node.children) {
+    const found = findNodeById(child, id)
+    if (found) return found
+  }
+  return null
+}
+
 function loadTree() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
@@ -43,6 +52,8 @@ export default function App() {
   const [tree, setTree] = useState(loadTree)
   const [modal, setModal] = useState({ open: false, parentId: null })
   const [inputText, setInputText] = useState('')
+  const [descriptionText, setDescriptionText] = useState('')
+  const [activeNodeId, setActiveNodeId] = useState('root')
   const [selectMode, setSelectMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState(loadSelectedIds)
 
@@ -55,6 +66,7 @@ export default function App() {
   }, [selectedIds])
 
   const handleNodeClick = (nodeId) => {
+    setActiveNodeId(nodeId)
     if (selectMode) {
       setSelectedIds((prev) => {
         const next = new Set(prev)
@@ -63,6 +75,7 @@ export default function App() {
       })
     } else {
       setInputText('')
+      setDescriptionText('')
       setModal({ open: true, parentId: nodeId })
     }
   }
@@ -70,15 +83,18 @@ export default function App() {
   const closeModal = () => {
     setModal({ open: false, parentId: null })
     setInputText('')
+    setDescriptionText('')
   }
 
   const handleSubmit = () => {
     const text = inputText.trim()
+    const description = descriptionText.trim()
     if (!text) return
 
     const newNode = {
       id: `node-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       text,
+      description,
       children: [],
     }
 
@@ -90,20 +106,25 @@ export default function App() {
     if (window.confirm('Reset the entire tree? This cannot be undone.')) {
       setTree(ROOT_NODE)
       setSelectedIds(new Set())
+      setActiveNodeId('root')
     }
   }
 
+  const activeNode = findNodeById(tree, activeNodeId) || tree
+
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col">
+    <div className="relative z-10 h-full bg-surface-dark flex flex-col font-mono">
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
-        <h1 className="text-slate-100 font-semibold text-lg tracking-tight">
+      <header className="flex items-center justify-between px-6 py-4 border-b border-[rgba(0,255,65,0.2)] bg-[rgba(1,4,9,0.82)] backdrop-blur-md">
+        <h1 className="text-neon-green font-bold text-lg tracking-tight glow-text-subtle flex items-center gap-2">
+          <span className="text-neon-green opacity-60">{'>'}</span>
           My Tree
+          <span className="cursor-blink" />
         </h1>
 
         {/* Select mode toggle */}
         <div className="flex items-center gap-3">
-          <span className={`text-xs font-medium transition-colors ${selectMode ? 'text-amber-400' : 'text-slate-500'}`}>
+          <span className={`text-[10px] uppercase tracking-[0.2em] font-semibold transition-colors ${selectMode ? 'text-neon-purple' : 'text-neon-cyan opacity-70'}`}>
             {selectMode ? 'Select Mode' : 'Edit Mode'}
           </span>
           <button
@@ -111,21 +132,23 @@ export default function App() {
             aria-checked={selectMode}
             onClick={() => setSelectMode((v) => !v)}
             className={`
-              relative w-11 h-6 rounded-full transition-colors duration-200 cursor-pointer outline-none
-              focus-visible:ring-2 focus-visible:ring-amber-400
-              ${selectMode ? 'bg-amber-500' : 'bg-slate-600'}
+              relative w-11 h-6 rounded-full transition-all duration-200 cursor-pointer outline-none border
+              focus-visible:ring-2 focus-visible:ring-neon-purple
+              ${selectMode
+                ? 'bg-[rgba(191,0,255,0.25)] border-neon-purple shadow-[0_0_12px_rgba(191,0,255,0.45)]'
+                : 'bg-[rgba(0,255,65,0.08)] border-[rgba(0,255,65,0.3)]'}
             `}
           >
             <span
               className={`
-                absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow
+                absolute top-0.5 left-0.5 w-4 h-4 rounded-full shadow
                 transition-transform duration-200
-                ${selectMode ? 'translate-x-5' : 'translate-x-0'}
+                ${selectMode ? 'translate-x-5 bg-neon-purple' : 'translate-x-0 bg-neon-green'}
               `}
             />
           </button>
           {selectedIds.size > 0 && (
-            <span className="text-xs text-amber-400 font-medium">
+            <span className="text-[10px] uppercase tracking-[0.2em] text-neon-purple font-semibold">
               {selectedIds.size} selected
             </span>
           )}
@@ -133,18 +156,19 @@ export default function App() {
 
         <button
           onClick={handleReset}
-          className="text-xs text-slate-500 hover:text-red-400 transition-colors cursor-pointer"
+          className="text-[10px] uppercase tracking-[0.2em] font-semibold text-neon-green opacity-60 border border-[rgba(0,255,65,0.3)] rounded px-3 py-1.5 hover:opacity-100 hover:border-red-500 hover:text-red-400 hover:shadow-[0_0_12px_rgba(248,113,113,0.4)] transition-all cursor-pointer"
         >
           Reset Tree
         </button>
       </header>
 
       {/* Hint */}
-      <p className="text-center text-slate-600 text-xs pt-4">
+      <p className="text-center text-neon-green opacity-50 text-[11px] tracking-wider pt-4">
         {selectMode
-          ? 'Click nodes to highlight them — click again to deselect'
-          : 'Click any node to add a child node'}
+          ? '// click nodes to highlight them — click again to deselect'
+          : '// click any node to add a child node'}
       </p>
+
 
       {/* Scrollable tree canvas */}
       <div className="flex-1 overflow-auto p-12">
@@ -163,7 +187,9 @@ export default function App() {
       {modal.open && (
         <Modal
           inputText={inputText}
+          descriptionText={descriptionText}
           onChange={setInputText}
+          onDescriptionChange={setDescriptionText}
           onSubmit={handleSubmit}
           onClose={closeModal}
         />

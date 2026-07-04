@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SERVICE_NAME="mytree.service"
+PROJECT_DIR="/home/flash/Projects/my-tree"
+SERVICE_SRC="$PROJECT_DIR/$SERVICE_NAME"
+SERVICE_DST="/etc/systemd/system/$SERVICE_NAME"
+
+if [[ ! -f "$SERVICE_SRC" ]]; then
+  echo "Service file not found: $SERVICE_SRC"
+  exit 1
+fi
+
+echo "Installing $SERVICE_NAME to $SERVICE_DST"
+sudo cp "$SERVICE_SRC" "$SERVICE_DST"
+
+echo "Reloading systemd"
+sudo systemctl daemon-reload
+
+echo "Enabling and starting $SERVICE_NAME"
+sudo systemctl enable --now "$SERVICE_NAME"
+
+echo "Current service status:"
+sudo systemctl status --no-pager "$SERVICE_NAME"

@@ -1,0 +1,18 @@
+[Unit]
+Description=My Tree Vite Dev Server
+After=network.target
+
+[Service]
+Type=simple
+User=flash
+WorkingDirectory=/home/flash/Projects/my-tree
+
+Environment="PATH=/home/flash/.nvm/versions/node/v20.19.4/bin:/usr/bin:/bin"
+
+ExecStart=/home/flash/.nvm/versions/node/v20.19.4/bin/npm run dev -- --host 0.0.0.0 --port 4513 --strictPort
+
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

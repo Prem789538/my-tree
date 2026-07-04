@@ -4,17 +4,20 @@ export default function TreeNode({ node, onNodeClick, selectedIds = new Set(), s
 
   const nodeStyle = (() => {
     if (isSelected) {
-      return 'bg-amber-400 hover:bg-amber-300 text-slate-900 shadow-amber-500/50 ring-2 ring-amber-300/60'
+      return 'bg-[rgba(0,212,255,0.12)] hover:bg-[rgba(0,212,255,0.2)] text-neon-cyan border-neon-cyan shadow-[0_0_18px_rgba(0,212,255,0.5)]'
     }
     if (isRoot) {
-      return 'bg-violet-600 hover:bg-violet-500 shadow-violet-900/60 text-white ring-2 ring-violet-400/30'
+      return 'bg-[rgba(191,0,255,0.1)] hover:bg-[rgba(191,0,255,0.18)] text-neon-purple border-neon-purple shadow-[0_0_18px_rgba(191,0,255,0.4)]'
     }
-    return 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-900/50 text-white'
+    return 'bg-gradient-to-br from-surface to-surface-light hover:from-surface-light hover:to-surface text-neon-green border-[rgba(0,255,65,0.4)] shadow-[0_0_14px_rgba(0,255,65,0.25)] hover:shadow-[0_0_22px_rgba(0,255,65,0.45)] hover:border-neon-green'
   })()
 
-  const title = selectMode
+  const baseTitle = selectMode
     ? isSelected ? 'Click to deselect' : 'Click to select'
     : 'Click to add a child node'
+  const title = node.description
+    ? `${baseTitle}\n${node.description}`
+    : baseTitle
 
   return (
     <div className="flex flex-col items-center">
@@ -23,19 +26,26 @@ export default function TreeNode({ node, onNodeClick, selectedIds = new Set(), s
         onClick={() => onNodeClick(node.id)}
         title={title}
         className={`
-          cursor-pointer select-none px-5 py-2.5 rounded-full shadow-lg
-          font-medium text-sm whitespace-nowrap
-          transition-all duration-150 hover:scale-105 active:scale-95
+          cursor-pointer select-none inline-block max-w-[16rem] px-4 py-3 rounded-lg border font-mono
+          text-left break-words
+          transition-all duration-150 hover:scale-[1.02] active:scale-[0.98]
           ${nodeStyle}
         `}
       >
-        {node.text}
+        <div className="font-semibold text-sm leading-tight">
+          {node.text}
+        </div>
+        {node.description && (
+          <div className="text-xs leading-snug opacity-80 mt-1">
+            {node.description}
+          </div>
+        )}
       </div>
 
       {hasChildren && (
         <>
           {/* Vertical line from node down to horizontal connector */}
-          <div className="w-0.5 h-8 bg-slate-600" />
+          <div className="w-0.5 h-8 bg-[rgba(0,255,65,0.35)]" />
 
           {/* Children row */}
           <div className="flex">
@@ -46,15 +56,15 @@ export default function TreeNode({ node, onNodeClick, selectedIds = new Set(), s
               >
                 {/* Left half of horizontal connector (not on first child) */}
                 {i > 0 && (
-                  <div className="absolute top-0 left-0 w-1/2 h-0.5 bg-slate-600" />
+                  <div className="absolute top-0 left-0 w-1/2 h-0.5 bg-[rgba(0,255,65,0.35)]" />
                 )}
                 {/* Right half of horizontal connector (not on last child) */}
                 {i < node.children.length - 1 && (
-                  <div className="absolute top-0 right-0 w-1/2 h-0.5 bg-slate-600" />
+                  <div className="absolute top-0 right-0 w-1/2 h-0.5 bg-[rgba(0,255,65,0.35)]" />
                 )}
 
                 {/* Vertical line from horizontal connector down to child node */}
-                <div className="w-0.5 h-8 bg-slate-600" />
+                <div className="w-0.5 h-8 bg-[rgba(0,255,65,0.35)]" />
 
                 {/* Recursive child */}
                 <TreeNode
