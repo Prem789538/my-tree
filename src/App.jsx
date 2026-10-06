@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import TreeNode from './components/TreeNode'
 import Modal from './components/Modal'
 
@@ -30,6 +30,21 @@ function findNodeById(node, id) {
   return null
 }
 
+function isValidNode(node) {
+  return (
+    node &&
+    typeof node === 'object' &&
+    typeof node.id === 'string' &&
+    typeof node.text === 'string' &&
+    Array.isArray(node.children) &&
+    node.children.every(isValidNode)
+  )
+}
+
+function countNodes(node) {
+  return 1 + node.children.reduce((sum, child) => sum + countNodes(child), 0)
+}
+
 function loadTree() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
@@ -56,6 +71,7 @@ export default function App() {
   const [activeNodeId, setActiveNodeId] = useState('root')
   const [selectMode, setSelectMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState(loadSelectedIds)
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tree))
@@ -100,6 +116,52 @@ export default function App() {
 
     setTree((prev) => addChildToNode(prev, modal.parentId, newNode))
     closeModal()
+  }
+
+  const handleExport = () => {
+    const blob = new Blob([JSON.stringify(tree, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `my-tree-${stamp}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleImportClick = () => fileInputRef.current?.click()
+
+  const handleImportFile = (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // allow re-importing the same file
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      let parsed
+      try {
+        parsed = JSON.parse(reader.result)
+      } catch {
+        window.alert('Import failed: file is not valid JSON.')
+        return
+      }
+      if (!isValidNode(parsed)) {
+        window.alert('Import failed: JSON is not a valid tree (expected id, text, children).')
+        return
+      }
+      const incoming = countNodes(parsed)
+      const current = countNodes(tree)
+      if (
+        current > 1 &&
+        !window.confirm(`Replace the current tree (${current} nodes) with the imported one (${incoming} nodes)?`)
+      ) {
+        return
+      }
+      setTree(parsed)
+      setSelectedIds(new Set())
+      setActiveNodeId(parsed.id)
+    }
+    reader.readAsText(file)
   }
 
   const handleReset = () => {
@@ -154,12 +216,33 @@ export default function App() {
           )}
         </div>
 
-        <button
-          onClick={handleReset}
-          className="text-[10px] uppercase tracking-[0.2em] font-semibold text-neon-green opacity-60 border border-[rgba(0,255,65,0.3)] rounded px-3 py-1.5 hover:opacity-100 hover:border-red-500 hover:text-red-400 hover:shadow-[0_0_12px_rgba(248,113,113,0.4)] transition-all cursor-pointer"
-        >
-          Reset Tree
-        </button>
+        <div className="flex items-center gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json,.json"
+            onChange={handleImportFile}
+            className="hidden"
+          />
+          <button
+            onClick={handleExport}
+            className="text-[10px] uppercase tracking-[0.2em] font-semibold text-neon-green opacity-60 border border-[rgba(0,255,65,0.3)] rounded px-3 py-1.5 hover:opacity-100 hover:border-neon-green hover:shadow-[0_0_12px_rgba(0,255,65,0.4)] transition-all cursor-pointer"
+          >
+            Export
+          </button>
+          <button
+            onClick={handleImportClick}
+            className="text-[10px] uppercase tracking-[0.2em] font-semibold text-neon-green opacity-60 border border-[rgba(0,255,65,0.3)] rounded px-3 py-1.5 hover:opacity-100 hover:border-neon-green hover:shadow-[0_0_12px_rgba(0,255,65,0.4)] transition-all cursor-pointer"
+          >
+            Import
+          </button>
+          <button
+            onClick={handleReset}
+            className="text-[10px] uppercase tracking-[0.2em] font-semibold text-neon-green opacity-60 border border-[rgba(0,255,65,0.3)] rounded px-3 py-1.5 hover:opacity-100 hover:border-red-500 hover:text-red-400 hover:shadow-[0_0_12px_rgba(248,113,113,0.4)] transition-all cursor-pointer"
+          >
+            Reset Tree
+          </button>
+        </div>
       </header>
 
       {/* Hint */}
