@@ -4,12 +4,12 @@ After=network.target
 
 [Service]
 Type=simple
-User=arrow
-WorkingDirectory=/home/arrow/MyProjects/my-tree
+User=harry
+WorkingDirectory=/home/harry/MyProjects/my-tree
 
-Environment="PATH=/home/arrow/.nvm/versions/node/v20.19.4/bin:/usr/bin:/bin"
+Environment="PATH=/home/harry/.nvm/versions/node/v20.19.4/bin:/usr/bin:/bin"
 
-ExecStart=/home/arrow/.nvm/versions/node/v20.19.4/bin/npm run dev -- --host 0.0.0.0 --port 4513 --strictPort
+ExecStart=/home/harry/.nvm/versions/node/v20.19.4/bin/npm run dev -- --host 0.0.0.0 --port 4513 --strictPort
 
 Restart=always
 RestartSec=3

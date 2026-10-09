@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SERVICE_NAME="mytree.service"
-PROJECT_DIR="/home/arrow/MyProjects/my-tree"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SERVICE_SRC="$PROJECT_DIR/$SERVICE_NAME"
 SERVICE_DST="/etc/systemd/system/$SERVICE_NAME"
 
